@@ -5,10 +5,10 @@ begin
   Jeweler::Tasks.new do |s|
     s.name = "magic_cache_keys"
     s.summary = %Q{TODO}
-    s.email = "spam@staugaard.com"
+    s.email = "mick@staugaard.com"
     s.homepage = "http://github.com/staugaard/magic_cache_keys"
     s.description = "TODO"
-    s.authors = ["Mick Staugaard"]
+    s.authors = ["Mick Staugaard", "Morten Primdahl"]
   end
 rescue LoadError
   puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
@@ -39,13 +39,6 @@ begin
   end
 rescue LoadError
   puts "RCov is not available. In order to run rcov, you must: sudo gem install spicycode-rcov"
-end
-
-begin
-  require 'cucumber/rake/task'
-  Cucumber::Rake::Task.new(:features)
-rescue LoadError
-  puts "Cucumber is not available. In order to run features, you must: sudo gem install cucumber"
 end
 
 task :default => :test

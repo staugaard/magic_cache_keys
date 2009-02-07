@@ -1,0 +1,7 @@
+test:
+  adapter: mysql
+  encoding: utf8
+  database: magic_cache_keys_test
+  username: root
+  password:
+  socket: /tmp/mysql.sock
