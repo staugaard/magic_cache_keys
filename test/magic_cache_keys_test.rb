@@ -22,22 +22,22 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
   fixtures :blogs, :posts, :comments
   
   test "Base class generates a collection cache key" do
-    assert_not_nil(Comment.collection_cache_key)
-    assert_not_nil(Post.collection_cache_key)
+    assert_not_nil(Comment.cache_key)
+    assert_not_nil(Post.cache_key)
   end
   
   test "Base class generates a new cache keys when you add an item" do
-    key1 = Comment.collection_cache_key.to_s
+    key1 = Comment.cache_key.to_s
     Comment.create(:post_id => posts(:has_many_comments).id, :body => 'yay another comment')
-    key2 = Comment.collection_cache_key.to_s
+    key2 = Comment.cache_key.to_s
     
     assert_not_equal(key1, key2)
   end
   
   test "Base class generates a new cache keys when you remove an item" do
-    key1 = Comment.collection_cache_key.to_s
+    key1 = Comment.cache_key.to_s
     assert_equal(Comment.delete_all(:body => 'what ever body 5000'), 1)
-    key2 = Comment.collection_cache_key.to_s
+    key2 = Comment.cache_key.to_s
     
     assert_not_equal(key1, key2)
   end
@@ -47,8 +47,8 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
   end
   
   test "generates different cache keys on different ordering" do
-    key1 = Comment.collection_cache_key(:order => 'id DESC')
-    key2 = Comment.collection_cache_key(:order => 'id ASC')
+    key1 = Comment.cache_key(:order => 'id DESC')
+    key2 = Comment.cache_key(:order => 'id ASC')
     
     assert_not_equal(key1, key2)
 
@@ -59,8 +59,8 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
   end
   
   test "generated different cache key when conditioned" do
-    key1 = Comment.collection_cache_key
-    key2 = Comment.collection_cache_key(:conditions => {:body => comments(:few_comments_1).body})
+    key1 = Comment.cache_key
+    key2 = Comment.cache_key(:conditions => {:body => comments(:few_comments_1).body})
     
     assert_not_equal(key1, key2)
 
@@ -71,13 +71,23 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
   end
   
   test "generated the correct keys for names scopes" do
-    key1 = Post.orderd1.collection_cache_key
-    key2 = Post.orderd2.collection_cache_key
+    key1 = Post.orderd1.cache_key
+    key2 = Post.orderd2.cache_key
     
     assert_not_equal(key1, key2)
+
+    key1 = Post.orderd1.cache_key
+    key2 = Post.cache_key(:order => 'title DESC')
+    
+    assert_equal(key1, key2)
+
+    key1 = Post.orderd2.cache_key
+    key2 = Post.cache_key(:order => 'title ASC')
+    
+    assert_equal(key1, key2)
   end
 
-  test "includes info about new records when not cached" do
+  test "includes info about new records" do
     key1 = blogs(:a_blog).posts.cache_key
     blogs(:a_blog).posts.build(:title => 'new blog post')
     key2 = blogs(:a_blog).posts.cache_key
@@ -85,28 +95,6 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
     assert_not_equal(key1, key2)
   end
 
-  test "includes info about new records when cached" do
-    key1 = posts(:has_two_comments).comments.cache_key
-    #call again to make sure the key is cached
-    key1 = posts(:has_two_comments).comments.cache_key
-    
-    posts(:has_two_comments).comments.build(:body => 'new comment')
-    
-    key2 = posts(:has_two_comments).comments.cache_key.to_s
-    
-    assert_not_equal(key1, key2)
-  end
-  
-  test "caches the cache key when asked to and column is present" do
-    assert_nil(posts(:has_two_comments)['comments_cache_key'])
-
-    key1 = posts(:has_two_comments).comments.cache_key
-    key2 = posts(:has_two_comments)['comments_cache_key']
-    
-    assert_not_nil(key1)
-    assert_equal(key1, key2)
-  end
-  
   test "includes association cache key when asked to" do
     key1 = blogs(:a_blog).cache_key
     key2 = blogs(:a_blog).cache_key(:posts)
@@ -124,20 +112,4 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
     key2 = blogs(:a_blog).cache_key(:posts, :posts_orderd1)
     assert_equal(key1, key2)
   end
-  
-  test "updates the cache key column when the items are added to the collection" do
-    key1 = posts(:has_two_comments).comments.cache_key
-    key1 = posts(:has_two_comments)['comments_cache_key']
-    
-    assert_not_nil(key1)
-    
-    posts(:has_two_comments).comments.create(:body => 'new comment')
-    
-    posts(:has_two_comments).reload
-    key2 = posts(:has_two_comments)['comments_cache_key']
-    
-    assert_not_nil(key2)
-    assert_not_equal(key1, key2)
-  end
-  
 end

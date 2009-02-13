@@ -4,10 +4,10 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |s|
     s.name = "magic_cache_keys"
-    s.summary = %Q{TODO}
+    s.summary = "An extension of ActiveRecord adding database side generated cache keys for collections"
     s.email = "mick@staugaard.com"
     s.homepage = "http://github.com/staugaard/magic_cache_keys"
-    s.description = "TODO"
+    s.description = "An extension of ActiveRecord adding database side generated cache keys for collections"
     s.authors = ["Mick Staugaard", "Morten Primdahl"]
   end
 rescue LoadError
