@@ -19,21 +19,7 @@ module ActiveRecord
         if @owner.attribute_present?(@reflection.cache_key_column)
           key = @owner[@reflection.cache_key_column]
         else
-          options = {:conditions => sanitize_sql({@reflection.primary_key_name => @owner.id})}
-          options[:conditions] << " AND (#{conditions})" if conditions
-          
-          if @reflection.options[:order]
-            options[:order] = @reflection.options[:order]
-          end
-          construct_find_options!(options)
-          merge_options_from_reflection!(options)
-
-          key = @reflection.klass.collection_cache_key(options)
-
-          if @owner.class.column_names.include?(@reflection.cache_key_column)
-            @owner.class.update_all("#{@reflection.cache_key_column} = '#{key}'", "#{@owner.class.primary_key} = #{@owner.id}")
-            @owner[@reflection.cache_key_column] = key
-          end
+          key = update_cache_key
         end
         
         new_records_count = @target.select { |r| r.new_record? }.size
@@ -44,6 +30,26 @@ module ActiveRecord
           key.dup
         end
       end
+      
+      def update_cache_key
+        options = {:conditions => sanitize_sql({@reflection.primary_key_name => @owner.id})}
+        options[:conditions] << " AND (#{conditions})" if conditions
+        
+        if @reflection.options[:order]
+          options[:order] = @reflection.options[:order]
+        end
+        construct_find_options!(options)
+        merge_options_from_reflection!(options)
+
+        key = @reflection.klass.collection_cache_key(options)
+
+        if @owner.class.column_names.include?(@reflection.cache_key_column)
+          @owner.class.update_all("#{@reflection.cache_key_column} = '#{key}'", "#{@owner.class.primary_key} = #{@owner.id}")
+          @owner[@reflection.cache_key_column] = key
+        end
+        
+        key
+      end
     end
     
     class AssociationCollectionUpdater
@@ -52,8 +58,14 @@ module ActiveRecord
       end
       
       def after_save(record)
-        the_key = @reflection.klass.collection_cache_key(:conditions => {@reflection.primary_key_name => record[@reflection.primary_key_name]})
-        @reflection.active_record.update_all("#{@reflection.cache_key_column} = '#{the_key}'", "#{@reflection.active_record.primary_key} = #{record[@reflection.primary_key_name]}")
+        if record.changed?
+          owner_ids = record.send(:attribute_change, @reflection.primary_key_name)
+          owner_ids ||= [record[@reflection.primary_key_name]]
+
+          @reflection.active_record.find(owner_ids.compact).each do |owner|
+            owner.send(@reflection.name).update_cache_key
+          end
+        end
       end
       alias_method :after_destroy, :after_save
     end
@@ -70,13 +82,16 @@ module ActiveRecord
     
     class << self
       def collection_cache_key(options = {})
-        order = options.delete(:order)
+        order = options.delete(:order) || scope(:find, :order)
         opts = {:select => "MD5(CONCAT(GROUP_CONCAT(CONV(id,10,36)#{ ' ORDER BY ' + order unless order.blank?}), MAX(updated_at))) as cached_key"}.reverse_merge(options)
+        
+        connection.execute('SET group_concat_max_len = 1048576')
         "#{model_name.cache_key}/#{connection.select_value(construct_finder_sql(opts)) || 'empty'}"
       end
 
       def has_many_with_cache_key(association_id, options = {}, &extension)
         options[:extend] ||= []
+        options[:extend] = [*options[:extend]]
         options[:extend] << ActiveRecord::CacheKeyCaching::AssociationCollectionExtension
         
         has_many_without_cache_key(association_id, options, &extension)

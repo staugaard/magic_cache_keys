@@ -7,6 +7,8 @@ end
 class Post < ActiveRecord::Base
   belongs_to :blog
   has_many :comments, :cache_key => true
+  named_scope :orderd1, {:order => 'title DESC'}
+  named_scope :orderd2, {:order => 'title ASC'}
 end
 
 class Blog < ActiveRecord::Base
@@ -22,6 +24,22 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
   test "Base class generates a collection cache key" do
     assert_not_nil(Comment.collection_cache_key)
     assert_not_nil(Post.collection_cache_key)
+  end
+  
+  test "Base class generates a new cache keys when you add an item" do
+    key1 = Comment.collection_cache_key.to_s
+    Comment.create(:post_id => posts(:has_many_comments).id, :body => 'yay another comment')
+    key2 = Comment.collection_cache_key.to_s
+    
+    assert_not_equal(key1, key2)
+  end
+  
+  test "Base class generates a new cache keys when you remove an item" do
+    key1 = Comment.collection_cache_key.to_s
+    assert_equal(Comment.delete_all(:body => 'what ever body 5000'), 1)
+    key2 = Comment.collection_cache_key.to_s
+    
+    assert_not_equal(key1, key2)
   end
   
   test "has_many associations generates a cache key" do
@@ -52,6 +70,13 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
     assert_not_equal(key1, key2)
   end
   
+  test "generated the correct keys for names scopes" do
+    key1 = Post.orderd1.collection_cache_key
+    key2 = Post.orderd2.collection_cache_key
+    
+    assert_not_equal(key1, key2)
+  end
+
   test "includes info about new records when not cached" do
     key1 = blogs(:a_blog).posts.cache_key
     blogs(:a_blog).posts.build(:title => 'new blog post')
@@ -108,13 +133,11 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
     
     posts(:has_two_comments).comments.create(:body => 'new comment')
     
+    posts(:has_two_comments).reload
     key2 = posts(:has_two_comments)['comments_cache_key']
     
     assert_not_nil(key2)
     assert_not_equal(key1, key2)
   end
   
-  test "updates the cache key column when the items are removed from the collection" do
-    
-  end
 end
