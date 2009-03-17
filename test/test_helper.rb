@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'test/unit'
+require 'active_support'
 require 'active_record'
 require 'active_record/fixtures'
 
@@ -11,11 +12,10 @@ load(File.dirname(__FILE__) + "/schema.rb")
 
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'magic_cache_keys'
-
-Test::Unit::TestCase.fixture_path = File.dirname(__FILE__) + "/fixtures/"
-$LOAD_PATH.unshift(Test::Unit::TestCase.fixture_path)
  
-class Test::Unit::TestCase #:nodoc:
+class ActiveSupport::TestCase
+  include ActiveRecord::TestFixtures
+
   def create_fixtures(*table_names)
     if block_given?
       Fixtures.create_fixtures(Test::Unit::TestCase.fixture_path, table_names) { yield }
@@ -32,3 +32,6 @@ class Test::Unit::TestCase #:nodoc:
  
   # Add more helper methods to be used by all tests here...
 end
+
+ActiveSupport::TestCase.fixture_path = File.dirname(__FILE__) + "/fixtures/"
+$LOAD_PATH.unshift(ActiveSupport::TestCase.fixture_path)
