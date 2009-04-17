@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.description = %q{An extension of ActiveRecord adding database side generated cache keys for collections}
   s.email = %q{mick@staugaard.com}
   s.extra_rdoc_files = ["README", "LICENSE"]
-  s.files = ["VERSION.yml", "lib/magic_cache_keys.rb", "test/database.yml", "test/debug.log", "test/fixtures", "test/fixtures/blogs.yml", "test/fixtures/comments.yml", "test/fixtures/posts.yml", "test/magic_cache_keys_test.rb", "test/schema.rb", "test/test_helper.rb", "README", "LICENSE"]
+  s.files = ["VERSION.yml", "lib/magic_cache_keys.rb", "test/database.yml", "test/fixtures", "test/fixtures/blogs.yml", "test/fixtures/comments.yml", "test/fixtures/posts.yml", "test/magic_cache_keys_test.rb", "test/schema.rb", "test/test_helper.rb", "README", "LICENSE"]
   s.has_rdoc = true
   s.homepage = %q{http://github.com/staugaard/magic_cache_keys}
   s.rdoc_options = ["--inline-source", "--charset=UTF-8"]
