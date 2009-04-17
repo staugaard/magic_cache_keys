@@ -39,7 +39,7 @@ module ActiveRecord
     class << self
       def cache_key(options = {})
         order = options.delete(:order) || scope(:find, :order)
-        opts = {:select => "MD5(CONCAT(GROUP_CONCAT(CONV(id,10,36)#{ ' ORDER BY ' + order unless order.blank?}), MAX(updated_at))) as cached_key"}.reverse_merge(options)
+        opts = {:select => "MD5(CONCAT(GROUP_CONCAT(CONV(#{table_name}.id,10,36)#{ ' ORDER BY ' + order unless order.blank?}), MAX(updated_at))) as cached_key"}.reverse_merge(options)
         
         connection.execute('SET group_concat_max_len = 1048576')
         "#{model_name.cache_key}/#{connection.select_value(construct_finder_sql(opts)) || 'empty'}"
