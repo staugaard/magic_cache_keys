@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{magic_cache_keys}
-  s.version = "0.4.0"
+  s.version = "0.5.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Mick Staugaard", "Morten Primdahl"]
-  s.date = %q{2009-04-17}
+  s.date = %q{2009-04-19}
   s.description = %q{An extension of ActiveRecord adding database side generated cache keys for collections}
   s.email = %q{mick@staugaard.com}
   s.extra_rdoc_files = ["README", "LICENSE"]
