@@ -16,6 +16,7 @@ class Blog < ActiveRecord::Base
   has_many :posts_orderd1, :class_name => 'Post', :order => 'title DESC'
   has_many :posts_orderd2, :class_name => 'Post', :order => 'title ASC'
   has_many :posts_conditioned, :class_name => 'Post', :conditions => {:title => 'This post has a few comments'}
+  has_many :posts_by_sql, :class_name => "Post", :finder_sql => 'SELECT * FROM posts WHERE blog_id = #{id}'
 end
 
 class MagicCacheKeysTest < ActiveSupport::TestCase
@@ -110,6 +111,13 @@ class MagicCacheKeysTest < ActiveSupport::TestCase
   test "the order of the association cache keys should not matter" do
     key1 = blogs(:a_blog).cache_key(:posts_orderd1, :posts)
     key2 = blogs(:a_blog).cache_key(:posts, :posts_orderd1)
+    assert_equal(key1, key2)
+  end
+  
+  test "has_many associations with finder_sql generates a cache key" do
+    key1 = blogs(:a_blog).posts_by_sql.cache_key
+    assert_not_nil(key1)
+    key2 = blogs(:a_blog).posts.cache_key
     assert_equal(key1, key2)
   end
 end
