@@ -4,27 +4,15 @@ module ActiveRecord
   module CacheKeyCaching
     module AssociationCollectionExtension
       def cache_key
-        options = {:conditions => sanitize_sql({@reflection.primary_key_name => @owner.id})}
-        options[:conditions] << " AND (#{conditions})" if conditions
+        key = @reflection.klass.cache_key(scope(:find))
         
-        if @reflection.options[:order]
-          options[:order] = @reflection.options[:order]
-        end
-        construct_find_options!(options)
-        merge_options_from_reflection!(options)
-
-        key = @reflection.klass.cache_key(options)
-
         new_records_count = @target.select { |r| r.new_record? }.size
+
+        key << "/#{new_records_count}new" if new_records_count > 0
         
-        if new_records_count > 0
-          key + "/#{new_records_count}new"
-        else
-          key.dup
-        end
+        key
       end
     end
-    
   end
   
   class Base
@@ -39,7 +27,7 @@ module ActiveRecord
     class << self
       def cache_key(options = {})
         order = options.delete(:order) || scope(:find, :order)
-        opts = {:select => "MD5(CONCAT(GROUP_CONCAT(CONV(#{table_name}.id,10,36)#{ ' ORDER BY ' + order unless order.blank?}), MAX(#{table_name}.updated_at))) as cached_key"}.reverse_merge(options)
+        opts = {:select => "MD5(CONCAT(GROUP_CONCAT(CONV(#{quoted_table_name}.#{connection.quote_column_name(primary_key)},10,36)#{ ' ORDER BY ' + order unless order.blank?}), MAX(#{table_name}.updated_at))) as cached_key"}.reverse_merge(options)
         
         connection.execute('SET group_concat_max_len = 1048576')
         "#{model_name.cache_key}/#{connection.select_value(construct_finder_sql(opts)) || 'empty'}"
